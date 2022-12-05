@@ -192,14 +192,14 @@ pre {
   omega&lt;-params[4]
   alpha&lt;-params[5]
   beta&lt;-params[6]
-  
+
   Xhat&lt;-numeric(length(X)+1)
   Sigma2hat&lt;-numeric(length(X)+1)
   error&lt;-numeric(length(X))
   Xhat[1]&lt;-0
   Sigma2hat[1]&lt;-var(X)#freebie
   error[1]&lt;-X[1]-Xhat[1]
-  
+
   for(tt in 1:length(X)){
     Xhat[tt+1]&lt;-mu+aa*error[tt]+bb*X[tt]
     Sigma2hat[tt+1]&lt;-omega+alpha*(error[tt])^2+beta*Sigma2hat[tt]
@@ -231,24 +231,24 @@ pre {
   omega&lt;-params[4]
   alpha&lt;-params[5]
   beta&lt;-params[6]
-  
+
   AG&lt;-ARMA11GARCH11(X,params)
   error&lt;-AG$error
   Sigma2hat&lt;-AG$Sigma2hat
   Xhat&lt;-AG$Xhat
-  
+
   derror&lt;-matrix(data=0,nrow=length(error),ncol=6)
   dSigma2hat&lt;-matrix(data=0,nrow=length(error),ncol=6)
-  
+
   for(tt in 1:(nrow(derror)-1)){
     derror[tt+1,]&lt;-c(1,error[tt],X[tt],0,0,0)+c(aa*derror[tt,1:3],0,0,0)
     dSigma2hat[tt+1,]&lt;-c(alpha*2*error[tt]*derror[tt,1:3],
                          1,error[tt]^2,Sigma2hat[tt])+beta*dSigma2hat[tt,]
   }
-  
+
   gr&lt;-apply((head(Sigma2hat,-1)*2*error*derror-error^2*dSigma2hat)/
               (head(Sigma2hat,-1))^2+1/(head(Sigma2hat,-1))*dSigma2hat,2,sum)
-  
+
   return(gr)
 }</code></pre>
 </div>
@@ -266,7 +266,7 @@ print(log.likelihood(X,init.par))</code></pre>
 <pre class="r"><code>opt&lt;-optim(init.par,log.likelihood,X=X)
 opt.par&lt;-opt$par
 print(opt$par)</code></pre>
-<pre><code>##           mu            a            b        omega        alpha         beta 
+<pre><code>##           mu            a            b        omega        alpha         beta
 ## 0.0006415044 0.0087016425 0.0228947570 0.0000042531 0.0630427079 0.8974679826</code></pre>
 <pre class="r"><code>print(opt$value)</code></pre>
 <pre><code>## [1] -15349.35</code></pre>
@@ -310,6 +310,7 @@ points(time(X),head(AG$Xhat,-1)-1.96*sqrt(head(AG$Sigma2hat,-1)),type=&quot;l&qu
 <h2>Other notes</h2>
 <p>As mentioned earlier, I have ignored the constraints on the coefficients. These constraints can be implemented by projecting new parameter estimates onto the set of constrained solutions. One can also use adaptive learning rates, such as momentum strategies. Regularization penalties to changes in the parameter, or the magnitude of parameters can be added for slower changing parameter estimates. Specifications other than ARMA(1,1)-GARCH(1,1) can be considered in similar fashions. Reductions in the number of parameters increasing stability can be accomplished by utilizing variance targeting and mean targeting, where the parameters are constrained such that the implied long-run, unconditional mean and variance equal a specific target such as the historic mean and variance. One can also use stochastic gradient descent, and even only the single last observation for online estimation.</p>
 <p>After writing this I found a <a href="https://www.almoststochastic.com/2013/07/static-parameter-estimation-for-garch.html">similar article</a> online for the case of a zero-mean GARCH(1,1) process. However that post appears to contain errors in the calculation of the gradient, ignoring the recursive elements, for example that a change in <span class="math inline">\(\beta\)</span> changes <span class="math inline">\(\hat\sigma_{t-1}^2\)</span> and not just <span class="math inline">\(\hat\sigma_{t}^2\)</span>.</p>
+<p>Decreased run times (a factor of 1/22) can be accomplished by programming some parts of this code in C++ as done <a href="https://github.com/sczinner/ARMA11GARCH11">here on my Github.</a></p>
 </div>
 
 
